@@ -23,7 +23,7 @@ for(i in 1:nrow(dat)) {
 }
 
 dat$wind_compass <- compass_vec
-dat <- mutate(dat, diff_east = abs(wind_compass - 90), na.rm = TRUE)
+dat <- mutate(dat, diff_east = pmin(abs(360 - wind_compass + 90), abs(wind_compass - 90)), na.rm = TRUE)
 
 dat_vars <- select(dat, dt, year, month, station, TEMP, PRES, DEWP, RAIN,diff_east, WSPM )
 dat_vars <- group_by(dat_vars, year, month, station) %>%
