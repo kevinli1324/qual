@@ -29,7 +29,7 @@ dat_vars <- select(dat, dt, year, month, station, TEMP, PRES, DEWP, RAIN,diff_ea
 dat_vars <- group_by(dat_vars, year, month, station) %>%
   summarise(TEMP = mean(TEMP, na.rm = TRUE), PRES = mean(PRES, na.rm = TRUE),
            DEWP = mean(DEWP, na.rm = TRUE), 
-           RAIN = mean(RAIN, na.rm = TRUE), 
+           RAIN = sum(RAIN, na.rm = TRUE), 
            diff_east = mean(diff_east, na.rm = TRUE),
            WSPM = mean(WSPM, na.rm = TRUE)) %>% ungroup()
 
@@ -51,6 +51,17 @@ rolling_dat <- arrange(test_dat, station, hr_diff) %>% group_by(station) %>%
 complete_roll <- rolling_dat[complete.cases(rolling_dat), ]
 
 grouped_day <- group_by(rolling_dat, station, year, month) %>% summarise(
+  max_CO8 = sum(all(is.na(CO8))), 
+  max_O38 = sum(is.na(CO8)), 
+  maxPM2.524 = sum(is.na(CO8)), 
+  maxPM1024 = sum(is.na(CO8)), 
+  maxNO2 = max(NO2, na.rm = TRUE), 
+  maxS02_3 = max(SO2_3, na.rm = TRUE)
+) %>% ungroup()
+
+sum(complete.cases(dat))
+
+grouped_day <- group_by(rolling_dat, station, year, month) %>% summarise(
   max_CO = max(CO, na.rm = TRUE), 
   max_CO8 = max(CO_8, na.rm = TRUE), 
   max_O38 = max(O3_8, na.rm = TRUE), 
@@ -65,6 +76,15 @@ finite_final <- grouped_day %>%
 
 finite_final_vars <- finite_final %>% left_join(dat_vars)
 
+dep_var <- select(finite_final_vars, maxPM2.524,maxPM1024, maxNO2, maxS02_3, max_CO8, max_O38, 
+                  RAIN, TEMP, PRES, diff_east, WSPM)
+pairs(dep_var)
+
+colnames(dep_var) <- c("PM2.5", "PM10", "NO2", "SO2", "CO8", "O3", "Rain", "Temp", "Pressure", "EastDiff", 
+                       "WS")
+
+library(GGally)
+ggpairs(dep_var) + ggtitle("Pairs Plot Covariates and Response")
 saveRDS(finite_final_vars, "final_dat.rds")
 
 ### do plots eda ###
